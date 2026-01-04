@@ -1,0 +1,15 @@
+tor:
+  socks_proxy: "socks5h://tor:9050"
+  timeout: 45
+neo4j:
+  uri: "bolt://neo4j:7687"
+  user: "neo4j"
+  password: "neo4j"
+storage:
+  sqlite_path: "/data/crawler.db"
+  json_dir: "/data/json"
+crawler:
+  user_agent: "OnionOSINT/1.0 (+research)"
+  respect_robots: false
+  max_body_bytes: 800000
+  snapshot_text_hash: true

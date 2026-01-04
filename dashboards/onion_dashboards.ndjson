@@ -1,0 +1,31 @@
+{"id":"onion_pages_data_view","type":"index-pattern","attributes":{"title":"onion_pages*","timeFieldName":"extracted_at"}}
+
+{"id":"onion_overview_vis_topics","type":"visualization","attributes":{
+  "title":"Topics Distribution",
+  "visState":"{\"title\":\"Topics Distribution\",\"type\":\"pie\",\"params\":{\"addLegend\":true,\"addTooltip\":true,\"legendPosition\":\"right\"},\"aggs\":[{\"id\":\"1\",\"type\":\"count\",\"schema\":\"metric\",\"params\":{}},{\"id\":\"2\",\"type\":\"terms\",\"schema\":\"segment\",\"params\":{\"field\":\"topics\",\"size\":10,\"order\":\"desc\",\"orderBy\":\"1\"}}]}",
+  "uiStateJSON":"{}",
+  "description":"Verteilung der Topics (topics-Feld) im Index onion_pages.",
+  "savedSearchRefName":"search_0",
+  "indexPatternRefName":"indexpattern_0"
+},"references":[{"name":"indexpattern_0","type":"index-pattern","id":"onion_pages_data_view"}]}
+
+{"id":"onion_overview_vis_risk","type":"visualization","attributes":{
+  "title":"High-Risk Sites (Host/Topics)",
+  "visState":"{\"title\":\"High-Risk Sites (Host/Topics)\",\"type\":\"table\",\"params\":{\"perPage\":10},\"aggs\":[{\"id\":\"1\",\"type\":\"count\",\"schema\":\"metric\",\"params\":{}},{\"id\":\"2\",\"type\":\"terms\",\"schema\":\"bucket\",\"params\":{\"field\":\"host\",\"size\":20,\"order\":\"desc\",\"orderBy\":\"1\"}},{\"id\":\"3\",\"type\":\"terms\",\"schema\":\"bucket\",\"params\":{\"field\":\"topics\",\"size\":5,\"order\":\"desc\",\"orderBy\":\"1\"}}]}",
+  "uiStateJSON":"{}",
+  "description":"Hosts + Topics nach Anzahl Dokumente.",
+  "savedSearchRefName":"search_0",
+  "indexPatternRefName":"indexpattern_0"
+},"references":[{"name":"indexpattern_0","type":"index-pattern","id":"onion_pages_data_view"}]}
+
+{"id":"onion_overview_dashboard","type":"dashboard","attributes":{
+  "title":"Onion Intelligence Overview",
+  "description":"High-Level-Übersicht: Topics-Verteilung und High-Risk-Sites.",
+  "panelsJSON":"[{\"panelIndex\":\"1\",\"gridData\":{\"x\":0,\"y\":0,\"w\":24,\"h\":15,\"i\":\"1\"},\"type\":\"visualization\",\"id\":\"onion_overview_vis_topics\"},{\"panelIndex\":\"2\",\"gridData\":{\"x\":0,\"y\":15,\"w\":24,\"h\":15,\"i\":\"2\"},\"type\":\"visualization\",\"id\":\"onion_overview_vis_risk\"}]",
+  "optionsJSON":"{\"useMargins\":true}",
+  "timeRestore":false,
+  "version":1
+},"references":[
+  {"name":"panel_0","type":"visualization","id":"onion_overview_vis_topics"},
+  {"name":"panel_1","type":"visualization","id":"onion_overview_vis_risk"}
+]}

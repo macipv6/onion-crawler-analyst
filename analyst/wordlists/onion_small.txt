@@ -1,0 +1,10 @@
+admin
+login
+panel
+config
+backup
+dashboard
+api
+private
+hidden
+uploads

@@ -1,0 +1,9 @@
+requests[socks]>=2.32
+beautifulsoup4>=4.12
+langdetect>=1.0.9
+opensearch-py>=2.5.0
+PyYAML>=6.0
+neo4j>=5.22
+tldextract>=5.1
+pysocks>=1.7.1
+robotexclusionrulesparser>=1.7.1

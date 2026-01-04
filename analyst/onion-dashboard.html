@@ -1,0 +1,1606 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>Onion Intelligence Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #020617;
+      --bg-alt: #020617;
+      --panel: #020617;
+      --panel-border: #1f2937;
+      --panel-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
+      --primary: #22d3ee;
+      --primary-soft: rgba(34, 211, 238, 0.12);
+      --accent: #4f46e5;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --danger: #f87171;
+      --border-radius-xl: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #0f172a 0, #020617 40%, #000 100%);
+      color: var(--text);
+    }
+
+    .shell {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px 16px 40px;
+    }
+
+    .header {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    @media (min-width: 768px) {
+      .header {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: flex-start;
+      }
+    }
+
+    .title-block {
+      flex: 1;
+    }
+
+    .title {
+      font-size: 24px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .title-badge {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.12), rgba(15, 23, 42, 0.95));
+      color: #e5e7eb;
+    }
+
+    .subtitle {
+      margin-top: 6px;
+      font-size: 13px;
+      color: var(--muted);
+      max-width: 560px;
+    }
+
+    .search-block {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+    }
+
+    .search-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .search-input {
+      width: 260px;
+      max-width: 100%;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid #1f2937;
+      background: rgba(15, 23, 42, 0.95);
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .search-input:focus {
+      outline: 2px solid rgba(34, 211, 238, 0.5);
+      outline-offset: 1px;
+    }
+
+    .search-btn {
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: none;
+      font-size: 13px;
+      font-weight: 600;
+      background: linear-gradient(135deg, var(--primary), #0ea5e9);
+      color: #020617;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(34, 211, 238, 0.35);
+      transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.08s ease;
+      white-space: nowrap;
+    }
+
+    .search-btn:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.05);
+      box-shadow: 0 10px 26px rgba(34, 211, 238, 0.4);
+    }
+
+    .search-btn:active {
+      transform: translateY(1px);
+      box-shadow: 0 5px 16px rgba(34, 211, 238, 0.28);
+    }
+
+    .nav-hint {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .nav-position {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .status-bar {
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--muted);
+      min-height: 16px;
+    }
+
+    .status-bar.hidden {
+      visibility: hidden;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.8fr) minmax(0, 1.4fr);
+      gap: 16px;
+    }
+
+    @media (max-width: 960px) {
+      .layout {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .panel {
+      background: radial-gradient(circle at top left, rgba(34, 211, 238, 0.06), rgba(15, 23, 42, 0.98));
+      border-radius: var(--border-radius-xl);
+      border: 1px solid var(--panel-border);
+      box-shadow: var(--panel-shadow);
+      padding: 16px 18px 14px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: 0.25;
+      background: radial-gradient(
+        circle at 0 0,
+        rgba(56, 189, 248, 0.24) 0,
+        transparent 43%
+      );
+      pointer-events: none;
+      mix-blend-mode: screen;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .panel-title {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #9ca3af;
+    }
+
+    .panel-subtitle {
+      font-size: 11px;
+      color: #64748b;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      background: rgba(15, 23, 42, 0.9);
+      font-size: 11px;
+      color: #cbd5f5;
+    }
+
+    .chip-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: var(--primary);
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.9);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      background: rgba(15, 23, 42, 0.9);
+      color: #e5e7eb;
+    }
+
+    .badge-muted {
+      border-color: rgba(75, 85, 99, 0.6);
+      color: #9ca3af;
+      background: rgba(15, 23, 42, 0.96);
+    }
+
+    .badge-green {
+      border-color: rgba(34, 197, 94, 0.6);
+      background: rgba(22, 163, 74, 0.18);
+      color: #bbf7d0;
+    }
+
+    .badge-red {
+      border-color: rgba(248, 113, 113, 0.6);
+      background: rgba(248, 113, 113, 0.14);
+      color: #fecaca;
+    }
+
+    .badge-pill {
+      padding: 3px 10px;
+    }
+
+    .headline {
+      margin: 0 0 6px;
+      font-size: 17px;
+      font-weight: 600;
+      color: #f9fafb;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 8px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .meta-label {
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 10px;
+      color: #6b7280;
+    }
+
+    .meta-value {
+      font-size: 11px;
+      color: #e5e7eb;
+    }
+
+    .section {
+      position: relative;
+      z-index: 1;
+    }
+
+    .cards-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    @media (max-width: 960px) {
+      .cards-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 700px) {
+      .cards-row {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .card {
+      border-radius: 14px;
+      border: 1px solid rgba(31, 41, 55, 0.85);
+      background: rgba(15, 23, 42, 0.96);
+      padding: 10px 11px;
+    }
+
+    .card-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: #9ca3af;
+      margin-bottom: 6px;
+    }
+
+    .list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      max-height: 130px;
+      overflow-y: auto;
+      font-size: 12px;
+    }
+
+    .list li {
+      padding: 3px 0;
+      border-bottom: 1px solid rgba(30, 64, 175, 0.16);
+    }
+
+    .list li:last-child {
+      border-bottom: none;
+    }
+
+    .list li a {
+      color: #7dd3fc;
+      text-decoration: none;
+    }
+
+    .list li a:hover {
+      text-decoration: underline;
+    }
+
+    .pill-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      font-size: 11px;
+    }
+
+    .grid-two {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    @media (max-width: 800px) {
+      .grid-two {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .hint {
+      font-size: 11px;
+      color: #6b7280;
+      margin-top: 8px;
+    }
+
+    /* Scan-Status / Tools */
+    .scan-tools-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    @media (max-width: 900px) {
+      .scan-tools-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 650px) {
+      .scan-tools-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .scan-tool-card {
+      border-radius: 12px;
+      border: 1px solid rgba(31, 41, 55, 0.85);
+      background: radial-gradient(circle at top left, rgba(34, 211, 238, 0.05), rgba(15, 23, 42, 0.98));
+      padding: 8px 9px;
+      cursor: pointer;
+      transition: border-color 0.12s ease, box-shadow 0.12s ease, transform 0.08s ease, background 0.12s ease;
+    }
+
+    .scan-tool-card:hover {
+      border-color: rgba(56, 189, 248, 0.7);
+      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.35);
+      transform: translateY(-1px);
+      background: radial-gradient(circle at top left, rgba(34, 211, 238, 0.08), rgba(15, 23, 42, 0.98));
+    }
+
+    .scan-tool-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .scan-tool-title {
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #9ca3af;
+    }
+
+    .scan-tool-body {
+      font-size: 11px;
+      color: #e5e7eb;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .scan-tool-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .scan-tool-line small {
+      color: #6b7280;
+      font-size: 10px;
+    }
+
+    .scan-tool-count {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .scan-status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      margin-right: 4px;
+      box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.7);
+    }
+
+    .scan-status-dot.ok {
+      background: #22c55e;
+      box-shadow: 0 0 10px rgba(34, 197, 94, 0.8);
+    }
+
+    .scan-status-dot.error {
+      background: #f97373;
+      box-shadow: 0 0 10px rgba(248, 113, 113, 0.8);
+    }
+
+    .scan-status-dot.partial {
+      background: #eab308;
+      box-shadow: 0 0 10px rgba(234, 179, 8, 0.8);
+    }
+
+    .scan-status-dot.unknown {
+      background: #4b5563;
+      box-shadow: 0 0 6px rgba(75, 85, 99, 0.6);
+    }
+
+    .scan-meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .scan-progress-wrap {
+      flex: 1;
+      min-width: 180px;
+    }
+
+    .scan-progress-bar {
+      position: relative;
+      width: 100%;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      overflow: hidden;
+      border: 1px solid rgba(31, 41, 55, 0.9);
+    }
+
+    .scan-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #22d3ee, #22c55e);
+      transition: width 0.22s ease-out;
+      box-shadow: 0 0 8px rgba(56, 189, 248, 0.7);
+    }
+
+    .scan-progress-label {
+      margin-top: 3px;
+      font-size: 11px;
+      color: #9ca3af;
+    }
+
+    .scan-filter-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      justify-content: flex-end;
+    }
+
+    .scan-filter-btn {
+      border-radius: 999px;
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      background: rgba(15, 23, 42, 0.9);
+      color: #9ca3af;
+      font-size: 10px;
+      padding: 3px 8px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .scan-filter-btn.active {
+      border-color: rgba(56, 189, 248, 0.9);
+      color: #e5e7eb;
+      background: rgba(15, 23, 42, 1);
+      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.4);
+    }
+
+    /* Modal */
+    .scan-modal {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+    }
+
+    .scan-modal.hidden {
+      display: none;
+    }
+
+    .scan-modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top, rgba(15, 23, 42, 0.95), rgba(0, 0, 0, 0.95));
+      backdrop-filter: blur(3px);
+    }
+
+    .scan-modal-dialog {
+      position: relative;
+      max-width: 720px;
+      width: calc(100% - 32px);
+      max-height: calc(100vh - 80px);
+      background: #020617;
+      border-radius: 16px;
+      border: 1px solid rgba(51, 65, 85, 0.9);
+      box-shadow: 0 24px 80px rgba(15, 23, 42, 0.9);
+      padding: 12px 14px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 51;
+    }
+
+    .scan-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .scan-modal-title {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #9ca3af;
+    }
+
+    .scan-modal-close {
+      border-radius: 999px;
+      border: 1px solid rgba(75, 85, 99, 0.9);
+      background: rgba(15, 23, 42, 0.95);
+      color: #e5e7eb;
+      font-size: 14px;
+      width: 26px;
+      height: 26px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .scan-modal-close:hover {
+      border-color: rgba(248, 113, 113, 0.8);
+      color: #fecaca;
+    }
+
+    .scan-modal-body {
+      flex: 1;
+      margin: 0;
+      font-size: 11px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      background: #020617;
+      border-radius: 10px;
+      border: 1px solid rgba(30, 64, 175, 0.6);
+      padding: 8px 10px;
+      overflow: auto;
+      white-space: pre;
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <!-- Header -->
+    <header class="header">
+      <div class="title-block">
+        <div class="title">
+          <span>Onion Intelligence Dashboard</span>
+          <span class="title-badge">Analyst UI</span>
+        </div>
+        <p class="subtitle">
+          Detailansicht für gecrawlte Onion- und Clearnet-Seiten. Oben suchst du nach einer konkreten Adresse, mit den Pfeiltasten
+          blätterst du durch den Index <code>onion_pages</code> (via <code>/api/onions/list</code>).
+        </p>
+      </div>
+
+      <div class="search-block">
+        <div class="search-row">
+          <input
+            id="onion-input"
+            class="search-input"
+            type="text"
+            placeholder="URL, Host oder .onion – z.B. account.proton.me"
+          />
+          <button id="load-btn" class="search-btn">Laden</button>
+        </div>
+        <div class="nav-hint">
+          Pfeiltasten: <strong>←</strong> vorherige &nbsp;&nbsp; <strong>→</strong> nächste Seite
+        </div>
+        <div class="nav-position">
+          Position: <span id="nav-position">– / ?</span>
+        </div>
+        <div id="status-bar" class="status-bar hidden"></div>
+      </div>
+    </header>
+
+    <!-- Layout -->
+    <main class="layout">
+      <!-- Linke Seite: Haupt-Overview & Identitäten -->
+      <section class="panel">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">Seiten-Überblick</div>
+            <div class="panel-subtitle">Titel, URL, Status & Tags</div>
+          </div>
+          <div class="chip">
+            <span class="chip-dot"></span>
+            <span>Live Preview</span>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2 id="onion-title" class="headline">Keine Seite geladen</h2>
+          <div class="muted">
+            URL:
+            <span id="onion-url" class="meta-value">–</span>
+          </div>
+
+          <div class="meta-row" style="margin-top: 10px;">
+            <div>
+              <div class="meta-label">Status</div>
+              <span id="onion-status-pill" class="badge badge-muted">unknown</span>
+            </div>
+            <div>
+              <div class="meta-label">Zuletzt gesehen</div>
+              <div id="onion-last-seen" class="meta-value">–</div>
+            </div>
+          </div>
+
+          <div style="margin-top: 10px;">
+            <div class="meta-label" style="margin-bottom: 4px;">Tags / Topics</div>
+            <div id="onion-tags" class="pill-list">
+              <span class="badge badge-muted">Keine Tags</span>
+            </div>
+          </div>
+
+          <div class="cards-row">
+            <div class="card">
+              <div class="card-title">E-Mail-Adressen</div>
+              <ul id="list-emails" class="list">
+                <li class="muted"><em>Keine Daten</em></li>
+              </ul>
+            </div>
+            <div class="card">
+              <div class="card-title">Usernames / Handles</div>
+              <div id="list-usernames" class="pill-list">
+                <span class="badge badge-muted">Keine Daten</span>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">Krypto-Wallets</div>
+              <ul id="list-crypto" class="list">
+                <li class="muted"><em>Keine Daten</em></li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="cards-row" style="margin-top: 10px;">
+            <div class="card">
+              <div class="card-title">PGP-Fingerprints</div>
+              <ul id="list-pgp" class="list">
+                <li class="muted"><em>Keine Daten</em></li>
+              </ul>
+            </div>
+            <div class="card">
+              <div class="card-title">Kurzinfo</div>
+              <p class="hint">
+                Diese Ansicht zeigt, welche Identitäten (E-Mail, Usernames, Wallets, PGP) auf dieser Seite auftauchen.
+                Sie basiert auf den Feldern des Index <code>onion_pages</code>.
+              </p>
+            </div>
+            <div class="card">
+              <div class="card-title">Navigation</div>
+              <p class="hint">
+                Mit <strong>←</strong> / <strong>→</strong> wird jeweils eine Seite über
+                <code>/api/onions/list?offset=N&amp;size=1</code> geholt und direkt dargestellt.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Rechte Seite: Technik, OSINT, Plugins, Scan-Status -->
+      <section class="panel">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">Technik, OSINT & Plugins</div>
+            <div class="panel-subtitle">Server-Fingerprint, Infrastruktur, Clearnet-Korrelation & Plugin-Treffer</div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="grid-two">
+            <!-- Technik -->
+            <div class="card">
+              <div class="card-title">Technische Merkmale</div>
+              <div style="display: flex; flex-direction: column; gap: 6px; font-size: 12px;">
+                <div>
+                  <div class="meta-label">Server</div>
+                  <div id="tech-server" class="meta-value">–</div>
+                </div>
+                <div>
+                  <div class="meta-label">Hosting-IP</div>
+                  <div id="tech-ip" class="meta-value">–</div>
+                </div>
+                <div>
+                  <div class="meta-label">Ports</div>
+                  <div id="tech-ports" class="meta-value">–</div>
+                </div>
+                <div>
+                  <div class="meta-label">TLS / Fingerprint</div>
+                  <div id="tech-fp" class="meta-value">–</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- OSINT -->
+            <div class="card">
+              <div class="card-title">OSINT-Korrelation</div>
+              <div style="font-size: 12px;">
+                <div class="meta-label" style="margin-bottom: 3px;">Clearnet-Profile</div>
+                <ul id="list-clearweb" class="list">
+                  <li class="muted"><em>Keine Daten</em></li>
+                </ul>
+                <div class="meta-label" style="margin-top: 6px; margin-bottom: 3px;">Verlinkte Domains</div>
+                <ul id="list-domains" class="list">
+                  <li class="muted"><em>Keine Daten</em></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Scan-Status -->
+          <div class="card" style="margin-top: 10px;">
+            <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+              <span>Scan-Status</span>
+              <button id="scan-btn" class="search-btn" style="padding:4px 10px;font-size:11px;box-shadow:none;">
+                Scan starten
+              </button>
+            </div>
+
+            <!-- Tool-Karten -->
+            <div class="scan-tools-grid">
+              <div class="scan-tool-card" data-tool="dir_ffuf">
+                <div class="scan-tool-header">
+                  <span class="scan-tool-title">Dir-Scan (ffuf)</span>
+                  <span id="scan-badge-dir_ffuf" class="badge badge-muted">
+                    <span class="scan-status-dot unknown"></span>keine Daten
+                  </span>
+                </div>
+                <div class="scan-tool-body">
+                  <div class="scan-tool-line">
+                    <span>Treffer</span>
+                    <span id="scan-count-dir_ffuf" class="scan-tool-count">–</span>
+                  </div>
+                  <div class="scan-tool-line">
+                    <small>Zuletzt</small>
+                    <small id="scan-time-dir_ffuf">–</small>
+                  </div>
+                </div>
+              </div>
+
+              <div class="scan-tool-card" data-tool="dir_gobuster">
+                <div class="scan-tool-header">
+                  <span class="scan-tool-title">Dir-Scan (gobuster)</span>
+                  <span id="scan-badge-dir_gobuster" class="badge badge-muted">
+                    <span class="scan-status-dot unknown"></span>keine Daten
+                  </span>
+                </div>
+                <div class="scan-tool-body">
+                  <div class="scan-tool-line">
+                    <span>Treffer</span>
+                    <span id="scan-count-dir_gobuster" class="scan-tool-count">–</span>
+                  </div>
+                  <div class="scan-tool-line">
+                    <small>Zuletzt</small>
+                    <small id="scan-time-dir_gobuster">–</small>
+                  </div>
+                </div>
+              </div>
+
+              <div class="scan-tool-card" data-tool="nmap_vuln">
+                <div class="scan-tool-header">
+                  <span class="scan-tool-title">Portcheck (nmap_vuln)</span>
+                  <span id="scan-badge-nmap_vuln" class="badge badge-muted">
+                    <span class="scan-status-dot unknown"></span>keine Daten
+                  </span>
+                </div>
+                <div class="scan-tool-body">
+                  <div class="scan-tool-line">
+                    <span>Ports</span>
+                    <span id="scan-count-nmap_vuln" class="scan-tool-count">–</span>
+                  </div>
+                  <div class="scan-tool-line">
+                    <small>Zuletzt</small>
+                    <small id="scan-time-nmap_vuln">–</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Progress + Filter -->
+            <div class="scan-meta-row">
+              <div class="scan-progress-wrap">
+                <div class="scan-progress-bar">
+                  <div id="scan-progress-fill" class="scan-progress-fill"></div>
+                </div>
+                <div id="scan-progress-label" class="scan-progress-label">
+                  0 % – keine Scans
+                </div>
+              </div>
+              <div class="scan-filter-wrap">
+                <button class="scan-filter-btn active" data-filter="all">Alle</button>
+                <button class="scan-filter-btn" data-filter="ok">Nur ok</button>
+                <button class="scan-filter-btn" data-filter="error">Nur Fehler</button>
+              </div>
+            </div>
+
+            <!-- Textuelle Zusammenfassung -->
+            <ul id="list-scan-status" class="list">
+              <li class="muted"><em>Kein Scan ausgeführt</em></li>
+            </ul>
+
+            <p class="hint">
+              Startet Dirbuster-ähnliche Scans (ffuf/gobuster-Style) und einen einfachen Port-Check über Tor für diese Seite.
+              Die Karten oben sind anklickbar und zeigen Details (Sample-Pfade / Ports) aus dem Index <code>onion_scans</code>.
+            </p>
+          </div>
+
+          <!-- Timeline -->
+          <div class="card" style="margin-top: 10px;">
+            <div class="card-title">Scan-Timeline</div>
+            <ul id="scan-timeline" class="list">
+              <li class="muted"><em>Noch keine Historie.</em></li>
+            </ul>
+            <p class="hint">
+              Zeigt die letzten Scans (Tool, Status, Zeitpunkt) für diesen Host in zeitlicher Reihenfolge.
+            </p>
+          </div>
+
+          <!-- Plugins -->
+          <div class="card" style="margin-top: 10px;">
+            <div class="card-title">Plugin-Aktivität</div>
+            <ul id="list-plugins" class="list">
+              <li class="muted"><em>Keine Plugin-Informationen</em></li>
+            </ul>
+            <p class="hint">
+              Hier können z.&nbsp;B. Treffer von Content- oder Identity-Plugins erscheinen (Hit-Count, letzter Lauf).
+              Die Daten werden aus dem Feld <code>plugins</code> des Dokuments übernommen, falls vorhanden.
+            </p>
+          </div>
+
+          <div style="margin-top: 8px; font-size: 11px; color: #6b7280;">
+            Tipp: Wenn eine manuell gesuchte Seite nicht gefunden wird, liefert <code>/api/onions/lookup</code> einen
+            <code>404&nbsp;–&nbsp;"Onion not found"</code>. Die Pfeiltasten arbeiten direkt mit der Indexreihenfolge.
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Modal für Tool-Details -->
+  <div id="scan-modal" class="scan-modal hidden">
+    <div class="scan-modal-backdrop"></div>
+    <div class="scan-modal-dialog">
+      <div class="scan-modal-header">
+        <div id="scan-modal-title" class="scan-modal-title">Scan-Details</div>
+        <button id="scan-modal-close" class="scan-modal-close">×</button>
+      </div>
+      <pre id="scan-modal-body" class="scan-modal-body"></pre>
+    </div>
+  </div>
+
+  <script>
+    const API_LIST = "/api/onions/list";
+    const API_LOOKUP = "/api/onions/lookup";
+
+    const statusBar = document.getElementById("status-bar");
+    const navPosition = document.getElementById("nav-position");
+    const input = document.getElementById("onion-input");
+    const scanStatusList = document.getElementById("list-scan-status");
+    const scanBtn = document.getElementById("scan-btn");
+    const scanTimelineEl = document.getElementById("scan-timeline");
+    const scanProgressFill = document.getElementById("scan-progress-fill");
+    const scanProgressLabel = document.getElementById("scan-progress-label");
+
+    const scanModal = document.getElementById("scan-modal");
+    const scanModalTitle = document.getElementById("scan-modal-title");
+    const scanModalBody = document.getElementById("scan-modal-body");
+    const scanModalClose = document.getElementById("scan-modal-close");
+
+    let currentOffset = 0;
+    let totalCount = null;
+    let currentHost = null; // host/.onion der aktuell angezeigten Seite
+    let lastScanStatus = null;
+    let scanFilter = "all";
+
+    const TOOL_LABELS = {
+      dir_ffuf: "Dir-Scan (ffuf)",
+      dir_gobuster: "Dir-Scan (gobuster)",
+      nmap_vuln: 'Portcheck ("nmap_vuln")',
+    };
+
+    function setStatus(message, type = "info") {
+      statusBar.classList.remove("hidden");
+      statusBar.style.color = {
+        info: "#9ca3af",
+        success: "#6ee7b7",
+        error: "#fca5a5",
+      }[type] || "#9ca3af";
+      statusBar.textContent = message;
+    }
+
+    function clearStatus() {
+      statusBar.classList.add("hidden");
+      statusBar.textContent = "";
+    }
+
+    function updateNavPosition() {
+      if (totalCount != null && totalCount > 0) {
+        navPosition.textContent = `${currentOffset + 1} / ${totalCount}`;
+      } else {
+        navPosition.textContent = `${currentOffset + 1} / ?`;
+      }
+    }
+
+    function arrayOrEmpty(arr) {
+      return Array.isArray(arr) ? arr : [];
+    }
+
+    function setToolCardStatus(tool, data) {
+      const badgeEl = document.getElementById(`scan-badge-${tool}`);
+      const countEl = document.getElementById(`scan-count-${tool}`);
+      const timeEl = document.getElementById(`scan-time-${tool}`);
+      if (!badgeEl || !countEl || !timeEl) return;
+
+      const dot = badgeEl.querySelector(".scan-status-dot");
+
+      if (!data) {
+        badgeEl.className = "badge badge-muted";
+        if (dot) {
+          dot.className = "scan-status-dot unknown";
+        }
+        badgeEl.innerHTML = `<span class="scan-status-dot unknown"></span>keine Daten`;
+        countEl.textContent = "–";
+        timeEl.textContent = "–";
+        return;
+      }
+
+      const status = (data.status || "unknown").toLowerCase();
+      badgeEl.className = "badge badge-pill";
+
+      let statusText = "";
+      let dotClass = "scan-status-dot unknown";
+
+      if (status === "ok") {
+        badgeEl.classList.add("badge-green");
+        statusText = "ok";
+        dotClass = "scan-status-dot ok";
+      } else if (status === "error") {
+        badgeEl.classList.add("badge-red");
+        statusText = "Fehler";
+        dotClass = "scan-status-dot error";
+      } else if (status === "partial_error") {
+        badgeEl.classList.add("badge-red");
+        statusText = "teilweise";
+        dotClass = "scan-status-dot partial";
+      } else {
+        badgeEl.classList.add("badge-muted");
+        statusText = "unbekannt";
+        dotClass = "scan-status-dot unknown";
+      }
+
+      const finished = data.finished_at || "–";
+      const count =
+        tool === "nmap_vuln"
+          ? (data.port_count != null ? data.port_count : "0")
+          : (data.entry_count != null ? data.entry_count : "0");
+
+      badgeEl.innerHTML = `<span class="${dotClass}"></span>${statusText}`;
+      countEl.textContent = count;
+      timeEl.textContent = finished || "–";
+    }
+
+    function renderScanStatus(data) {
+      lastScanStatus = data || null;
+      scanStatusList.innerHTML = "";
+
+      if (!data || !data.types || Object.keys(data.types).length === 0) {
+        scanStatusList.innerHTML = '<li class="muted"><em>Keine Scan-Daten für diesen Host gefunden.</em></li>';
+        // Tool-Karten resetten
+        setToolCardStatus("dir_ffuf", null);
+        setToolCardStatus("dir_gobuster", null);
+        setToolCardStatus("nmap_vuln", null);
+        // Progress reset
+        if (scanProgressFill) scanProgressFill.style.width = "0%";
+        if (scanProgressLabel) scanProgressLabel.textContent = "0 % – keine Scans";
+        // Timeline reset
+        if (scanTimelineEl) {
+          scanTimelineEl.innerHTML = '<li class="muted"><em>Noch keine Historie.</em></li>';
+        }
+        return;
+      }
+
+      const types = data.types;
+
+      // Progress / Prozent
+      if (data.progress && scanProgressFill && scanProgressLabel) {
+        const p = data.progress;
+        const percent = typeof p.percent === "number" ? p.percent : 0;
+        scanProgressFill.style.width = `${percent}%`;
+
+        let text = `${percent} % – `;
+        if (p.completed === 0) {
+          text += "keine Scans";
+        } else {
+          text += `${p.completed}/${p.total_tools} Tools ausgeführt`;
+          const extra = [];
+          if (p.success) extra.push(`${p.success} ok`);
+          if (p.failed) extra.push(`${p.failed} Fehler`);
+          if (p.pending) extra.push(`${p.pending} offen`);
+          if (extra.length) {
+            text += ` (${extra.join(", ")})`;
+          }
+        }
+        scanProgressLabel.textContent = text;
+      }
+
+      // Tool-Karten
+      setToolCardStatus("dir_ffuf", types["dir_ffuf"] || null);
+      setToolCardStatus("dir_gobuster", types["dir_gobuster"] || null);
+      setToolCardStatus("nmap_vuln", types["nmap_vuln"] || null);
+
+      // Textuelle Zusammenfassung mit Filter
+      const order = ["dir_ffuf", "dir_gobuster", "nmap_vuln"];
+      const labels = TOOL_LABELS;
+
+      const filteredTools = order.filter((key) => {
+        const t = types[key];
+        if (!t) return false;
+        if (scanFilter === "all") return true;
+        if (scanFilter === "ok") return t.status === "ok";
+        if (scanFilter === "error") return t.status && t.status !== "ok";
+        return true;
+      });
+
+      if (!filteredTools.length) {
+        scanStatusList.innerHTML =
+          '<li class="muted"><em>Keine Scan-Daten passend zum Filter.</em></li>';
+      } else {
+        filteredTools.forEach((key) => {
+          const t = types[key];
+          if (!t) return;
+          const li = document.createElement("li");
+          const finished = t.finished_at || "–";
+          const countInfo =
+            key === "nmap_vuln"
+              ? (t.port_count != null ? `Ports: ${t.port_count}` : "")
+              : (t.entry_count != null ? `Treffer: ${t.entry_count}` : "");
+
+          let statusText =
+            t.status === "ok"
+              ? "ok"
+              : (t.status === "error" ? "Fehler" : (t.status || "unknown"));
+
+          let html =
+            `<strong>${labels[key] || key}</strong>` +
+            (countInfo ? ` – ${countInfo}` : "") +
+            ` <span class="muted">(${finished}, Status: ${statusText})</span>`;
+
+          if (t.error && t.status !== "ok") {
+            html += `<br><span class="muted">Fehler: ${String(t.error).slice(0, 160)}${String(t.error).length > 160 ? "…" : ""}</span>`;
+          }
+
+          li.innerHTML = html;
+          scanStatusList.appendChild(li);
+        });
+      }
+
+      // Timeline
+      if (scanTimelineEl) {
+        scanTimelineEl.innerHTML = "";
+        const timeline = Array.isArray(data.timeline) ? data.timeline : [];
+        if (!timeline.length) {
+          scanTimelineEl.innerHTML =
+            '<li class="muted"><em>Noch keine Historie.</em></li>';
+        } else {
+          timeline.forEach((item) => {
+            const li = document.createElement("li");
+            const label = TOOL_LABELS[item.scan_type] || item.scan_type || "unknown";
+            const ts = item.finished_at || item.started_at || "–";
+            const st = (item.status || "unknown").toLowerCase();
+            const statusLabel =
+              st === "ok" ? "ok" : (st === "error" ? "Fehler" : (item.status || "unknown"));
+
+            const counts = [];
+            if (item.entry_count != null) counts.push(`Treffer: ${item.entry_count}`);
+            if (item.port_count != null) counts.push(`Ports: ${item.port_count}`);
+            const extra = counts.length ? ` – ${counts.join(", ")}` : "";
+
+            li.innerHTML =
+              `<strong>${label}</strong>${extra} ` +
+              `<span class="muted">(${ts}, Status: ${statusLabel})</span>`;
+            scanTimelineEl.appendChild(li);
+          });
+        }
+      }
+    }
+
+    async function loadScanStatusForHost(host) {
+      if (!host) {
+        scanStatusList.innerHTML = '<li class="muted"><em>Kein Host geladen.</em></li>';
+        return;
+      }
+
+      scanStatusList.innerHTML = '<li class="muted"><em>Scan-Status wird geladen …</em></li>';
+
+      try {
+        const res = await fetch(`/api/onions/${encodeURIComponent(host)}/scan-status`);
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          throw new Error(`HTTP ${res.status}${text ? " – " + text : ""}`);
+        }
+        const data = await res.json();
+        renderScanStatus(data);
+      } catch (err) {
+        console.error(err);
+        scanStatusList.innerHTML =
+          `<li class="muted"><em>Fehler beim Laden des Scan-Status: ${err.message}</em></li>`;
+      }
+    }
+
+    function renderOnion(data) {
+      // Titel & URL
+      document.getElementById("onion-title").textContent =
+        data.title || "Unbekannte Seite";
+      document.getElementById("onion-url").textContent = data.url
+        ? data.url
+        : data.onion
+          ? `http://${data.onion}`
+          : "–";
+
+      // Host merken
+      currentHost = data.host || data.onion || null;
+
+      // Zeit
+      document.getElementById("onion-last-seen").textContent =
+        data.last_seen || "–";
+
+      // Status
+      const statusPill = document.getElementById("onion-status-pill");
+      statusPill.textContent =
+        data.status !== undefined && data.status !== null
+          ? String(data.status)
+          : "unknown";
+      statusPill.className = "badge badge-pill";
+
+      const s = data.status;
+      if (s === "online" || s === 200) {
+        statusPill.classList.add("badge-green");
+      } else if (s === "offline" || (typeof s === "number" && s >= 400)) {
+        statusPill.classList.add("badge-red");
+      } else {
+        statusPill.classList.add("badge-muted");
+      }
+
+      // Tags
+      const tagsEl = document.getElementById("onion-tags");
+      tagsEl.innerHTML = "";
+      const tags = arrayOrEmpty(data.tags);
+      if (!tags.length) {
+        const span = document.createElement("span");
+        span.className = "badge badge-muted";
+        span.textContent = "Keine Tags";
+        tagsEl.appendChild(span);
+      } else {
+        tags.forEach((tag) => {
+          const span = document.createElement("span");
+          span.className = "badge";
+          span.textContent = tag;
+          tagsEl.appendChild(span);
+        });
+      }
+
+      // Emails
+      const emailsEl = document.getElementById("list-emails");
+      emailsEl.innerHTML = "";
+      const emails = arrayOrEmpty(data.emails);
+      if (!emails.length) {
+        emailsEl.innerHTML = '<li class="muted"><em>Keine Daten</em></li>';
+      } else {
+        emails.forEach((m) => {
+          const li = document.createElement("li");
+          li.textContent = m;
+          emailsEl.appendChild(li);
+        });
+      }
+
+      // Usernames
+      const usersEl = document.getElementById("list-usernames");
+      usersEl.innerHTML = "";
+      const users = arrayOrEmpty(data.usernames);
+      if (!users.length) {
+        const span = document.createElement("span");
+        span.className = "badge badge-muted";
+        span.textContent = "Keine Daten";
+        usersEl.appendChild(span);
+      } else {
+        users.forEach((u) => {
+          const span = document.createElement("span");
+          span.className = "badge";
+          span.textContent = u;
+          usersEl.appendChild(span);
+        });
+      }
+
+      // Crypto
+      const cryptoEl = document.getElementById("list-crypto");
+      cryptoEl.innerHTML = "";
+      const btc = arrayOrEmpty(data.btc_addresses);
+      const xmr = arrayOrEmpty(data.xmr_addresses);
+      const eth = arrayOrEmpty(data.eth_addresses);
+      const cryptoAll = btc.concat(xmr).concat(eth);
+      if (!cryptoAll.length) {
+        cryptoEl.innerHTML = '<li class="muted"><em>Keine Daten</em></li>';
+      } else {
+        cryptoAll.forEach((addr) => {
+          const li = document.createElement("li");
+          li.textContent = addr;
+          cryptoEl.appendChild(li);
+        });
+      }
+
+      // PGP
+      const pgpEl = document.getElementById("list-pgp");
+      pgpEl.innerHTML = "";
+      const pgp = arrayOrEmpty(data.pgp_keys);
+      if (!pgp.length) {
+        pgpEl.innerHTML = '<li class="muted"><em>Keine Daten</em></li>';
+      } else {
+        pgp.forEach((k) => {
+          const li = document.createElement("li");
+          li.textContent = k;
+          pgpEl.appendChild(li);
+        });
+      }
+
+      // Tech
+      const tech = data.tech || {};
+      document.getElementById("tech-server").textContent =
+        tech.server || "–";
+      document.getElementById("tech-ip").textContent =
+        tech.hosting_ip || "–";
+      document.getElementById("tech-ports").textContent =
+        Array.isArray(tech.ports) && tech.ports.length
+          ? tech.ports.join(", ")
+          : "–";
+      document.getElementById("tech-fp").textContent =
+        tech.fingerprint || "–";
+
+      // OSINT clearweb
+      const clearwebEl = document.getElementById("list-clearweb");
+      clearwebEl.innerHTML = "";
+      const osint = data.osint || {};
+      const clearweb = arrayOrEmpty(osint.clearweb_profiles);
+      if (!clearweb.length) {
+        clearwebEl.innerHTML = '<li class="muted"><em>Keine Daten</em></li>';
+      } else {
+        clearweb.forEach((p) => {
+          const li = document.createElement("li");
+          const a = document.createElement("a");
+          a.href = p.url || "#";
+          a.target = "_blank";
+          a.rel = "noopener noreferrer";
+          const label = p.service ? `[${p.service}] ` : "";
+          a.textContent = `${label}${p.handle || p.url}`;
+          li.appendChild(a);
+          clearwebEl.appendChild(li);
+        });
+      }
+
+      // OSINT domains
+      const domainsEl = document.getElementById("list-domains");
+      domainsEl.innerHTML = "";
+      const domains = arrayOrEmpty(osint.linked_domains);
+      if (!domains.length) {
+        domainsEl.innerHTML = '<li class="muted"><em>Keine Daten</em></li>';
+      } else {
+        domains.forEach((d) => {
+          const li = document.createElement("li");
+          li.textContent = d;
+          domainsEl.appendChild(li);
+        });
+      }
+
+      // Plugins
+      const pluginsEl = document.getElementById("list-plugins");
+      pluginsEl.innerHTML = "";
+      const plugins = (data.plugins && typeof data.plugins === "object")
+        ? data.plugins
+        : {};
+      const keys = Object.keys(plugins);
+      if (!keys.length) {
+        pluginsEl.innerHTML =
+          '<li class="muted"><em>Keine Plugin-Informationen</em></li>';
+      } else {
+        keys.forEach((name) => {
+          const p = plugins[name] || {};
+          const li = document.createElement("li");
+          const hits = p.hits !== undefined ? p.hits : 0;
+          const lastRun = p.last_run || "";
+          li.innerHTML = `<strong>${name}</strong>: ${hits} Treffer` +
+            (lastRun ? ` <span class="muted">(${lastRun})</span>` : "");
+          pluginsEl.appendChild(li);
+        });
+      }
+
+      // Scan-Status laden
+      if (currentHost) {
+        loadScanStatusForHost(currentHost);
+      } else {
+        scanStatusList.innerHTML = '<li class="muted"><em>Kein Host geladen.</em></li>';
+      }
+    }
+
+    async function showPageByOffset(offset) {
+      if (offset < 0) {
+        offset = 0;
+      }
+
+      setStatus(`Blättere zu Index #${offset + 1} …`, "info");
+
+      try {
+        const res = await fetch(`${API_LIST}?offset=${offset}&size=1`);
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          throw new Error(`HTTP ${res.status}${text ? " – " + text : ""}`);
+        }
+
+        const data = await res.json();
+        const items = data.items || [];
+        totalCount = typeof data.total === "number" ? data.total : null;
+
+        if (!items.length) {
+          setStatus("Keine Seite an dieser Position (Ende des Index).", "error");
+          return;
+        }
+
+        currentOffset = offset;
+        updateNavPosition();
+
+        const doc = items[0];
+        renderOnion(doc);
+
+        // Input mit der URL/Host befüllen, falls vorhanden
+        input.value = doc.url || doc.host || "";
+        setStatus(`Index #${currentOffset + 1} geladen.`, "success");
+      } catch (err) {
+        console.error(err);
+        setStatus(`Fehler beim Laden aus /api/onions/list: ${err.message}`, "error");
+      }
+    }
+
+    async function lookupManual(value) {
+      value = (value || "").trim();
+      if (!value) {
+        setStatus("Bitte eine URL, einen Host oder eine Onion-Adresse eingeben.", "error");
+        return;
+      }
+
+      setStatus(`Suche nach '${value}' …`, "info");
+
+      try {
+        const res = await fetch(`${API_LOOKUP}?q=${encodeURIComponent(value)}`);
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          if (res.status === 404) {
+            throw new Error("Onion not found");
+          }
+          throw new Error(`HTTP ${res.status}${text ? " – " + text : ""}`);
+        }
+
+        const data = await res.json();
+        renderOnion(data);
+        setStatus(`Daten für '${value}' geladen.`, "success");
+      } catch (err) {
+        console.error(err);
+        setStatus(`Fehler bei der Suche: ${err.message}`, "error");
+      }
+    }
+
+    async function triggerScanForCurrent() {
+      if (!currentHost) {
+        setStatus("Kein Host für Scan geladen.", "error");
+        return;
+      }
+
+      setStatus(`Starte Scan für ${currentHost} …`, "info");
+      scanStatusList.innerHTML =
+        '<li class="muted"><em>Scan läuft … bitte etwas Geduld.</em></li>';
+
+      try {
+        const res = await fetch(`/api/onions/${encodeURIComponent(currentHost)}/scan`, {
+          method: "POST",
+        });
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          throw new Error(`HTTP ${res.status}${text ? " – " + text : ""}`);
+        }
+        const data = await res.json();
+        console.log("Scan result", data);
+        setStatus(`Scan für ${currentHost} abgeschlossen.`, "success");
+        renderScanStatus(data);
+      } catch (err) {
+        console.error(err);
+        setStatus(`Scan-Fehler: ${err.message}`, "error");
+        scanStatusList.innerHTML =
+          `<li class="muted"><em>Scan-Fehler: ${err.message}</em></li>`;
+      }
+    }
+
+    function openScanModalForTool(toolKey) {
+      if (!lastScanStatus || !lastScanStatus.types || !lastScanStatus.types[toolKey]) {
+        return;
+      }
+      const t = lastScanStatus.types[toolKey];
+      const label = TOOL_LABELS[toolKey] || toolKey;
+
+      const payload = {
+        tool: toolKey,
+        label,
+        status: t.status,
+        started_at: t.started_at,
+        finished_at: t.finished_at,
+        attempts: t.attempts,
+        error: t.error,
+        sample_entries: t.sample_entries || [],
+        sample_ports: t.sample_ports || [],
+      };
+
+      scanModalTitle.textContent = `${label} – Details`;
+      scanModalBody.textContent = JSON.stringify(payload, null, 2);
+      scanModal.classList.remove("hidden");
+    }
+
+    function closeScanModal() {
+      scanModal.classList.add("hidden");
+    }
+
+    // Events
+    document.getElementById("load-btn").addEventListener("click", () => {
+      lookupManual(input.value);
+    });
+
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        lookupManual(input.value);
+      }
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        showPageByOffset(currentOffset + 1);
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        showPageByOffset(currentOffset - 1);
+      } else if (e.key === "Escape") {
+        closeScanModal();
+      }
+    });
+
+    scanBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      triggerScanForCurrent();
+    });
+
+    // Tool-Karten anklickbar
+    document.querySelectorAll(".scan-tool-card").forEach((card) => {
+      card.addEventListener("click", () => {
+        const tool = card.getAttribute("data-tool");
+        if (tool) {
+          openScanModalForTool(tool);
+        }
+      });
+    });
+
+    // Filter-Buttons
+    document.querySelectorAll(".scan-filter-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const f = btn.getAttribute("data-filter") || "all";
+        scanFilter = f;
+        document.querySelectorAll(".scan-filter-btn").forEach((b) => {
+          b.classList.toggle("active", b === btn);
+        });
+        if (lastScanStatus) {
+          renderScanStatus(lastScanStatus);
+        }
+      });
+    });
+
+    // Modal schließen
+    scanModalClose.addEventListener("click", () => {
+      closeScanModal();
+    });
+    scanModal.addEventListener("click", (e) => {
+      if (e.target === scanModal || e.target.classList.contains("scan-modal-backdrop")) {
+        closeScanModal();
+      }
+    });
+
+    // Initial: erste Seite aus dem Index anzeigen
+    updateNavPosition();
+    showPageByOffset(0);
+  </script>
+</body>
+</html>

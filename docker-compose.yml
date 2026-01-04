@@ -1,0 +1,208 @@
+services:
+  tor:
+    build:
+      context: ./tor
+    container_name: tor
+    restart: unless-stopped
+    networks: [core]
+    ports:
+      - "9050:9050"
+      - "9051:9051"
+    volumes:
+      - tor-data:/var/lib/tor
+
+  opensearch:
+    image: opensearchproject/opensearch:2.14.0
+    container_name: opensearch
+    environment:
+      - discovery.type=single-node
+      - DISABLE_INSTALL_DEMO_CONFIG=true
+      - DISABLE_SECURITY_PLUGIN=true
+      - DISABLE_PERFORMANCE_ANALYZER_AGENT=true
+      - OPENSEARCH_JAVA_OPTS=-Xms2g -Xmx2g
+      - bootstrap.memory_lock=true
+    ulimits:
+      memlock: { soft: -1, hard: -1 }
+      nofile:  { soft: 65536, hard: 65536 }
+    networks: [core]
+    ports:
+      - "9200:9200"
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+
+  dashboards:
+    image: opensearchproject/opensearch-dashboards:2.14.0
+    container_name: dashboards
+    depends_on:
+      opensearch:
+        condition: service_started
+    environment:
+      OPENSEARCH_HOSTS: '["http://opensearch:9200"]'
+      DISABLE_SECURITY_DASHBOARDS_PLUGIN: "true"
+      SERVER_HOST: "0.0.0.0"
+    networks: [core]
+    ports:
+      - "5601:5601"
+
+  renderer:
+    build:
+      context: ./renderer
+    container_name: renderer
+    depends_on: [tor]
+    environment:
+      - TOR_HOST=tor
+      - TOR_PORT=9050
+      - RENDER_BIND=0.0.0.0:8080
+    ports:
+      - "8080:8080"
+    volumes:
+      - renderer-shots:/shots
+    networks: [core]
+
+  crawler:
+    build:
+      context: ./crawler
+    container_name: crawler
+    depends_on:
+      opensearch: { condition: service_started }
+      tor:        { condition: service_started }
+      renderer:   { condition: service_started }
+    environment:
+      - TOR_SOCKS_HOST=tor
+      - TOR_SOCKS_PORT=9050
+
+      - OS_HOST=http://opensearch:9200
+      - OS_INDEX=onion_pages
+
+      # Renderer
+      - RENDERER_URL=http://renderer:8080
+      - RENDER_ENABLE=false
+      - RENDER_MODE=safe
+      - RENDER_SKIP_ON_RISK=true
+      - RISK_RENDER_THRESHOLD=60
+      - RENDER_BLOCKLIST=abuse,csam,child sexual,child abuse,exploit kids
+
+      # Crawl Limits
+      - CRAWL_MAX_PAGES=500000000
+      - CRAWL_MAX_PER_HOST=20000
+      - CRAWL_MAX_DEPTH=2000
+      - CRAWL_REQUEST_TIMEOUT=60
+      - CRAWL_HOST_DELAY=10
+
+      # UA
+      - USER_AGENT=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:131.0) Gecko/20100101 Firefox/131.0
+
+      # Clearnet über Tor
+      - CRAWL_CLEARNET=true
+      - CLEARNET_ALLOWLIST=
+      - CLEARNET_DENYLIST=
+
+      # Forumsystem
+      - FORUMS_ENABLE=false
+      - FORUMS_CONFIG=/app/forums.yaml
+
+      # Daten
+      - DATA_DIR=/app/data
+      - STORE_CLEARNET_LINKS=true
+
+      # Neo4j
+      - NEO4J_URI=bolt://neo4j:7687
+      - NEO4J_USER=neo4j
+      - NEO4J_PASSWORD=ChangeThis!Strong#2025
+      - NEO4J_ENABLE_SCHEMA_INIT=true
+
+    volumes:
+      - ./crawler/seeds.txt:/app/seeds.txt:ro
+      - ./crawler/forums.yaml:/app/forums.yaml:ro
+      - crawler-state:/app/state
+      - crawler-data:/app/data
+    networks: [core]
+    restart: unless-stopped
+
+
+  neo4j:
+    image: neo4j:5.23-community
+    container_name: neo4j
+    restart: unless-stopped
+    environment:
+      NEO4J_AUTH: "neo4j/ChangeThis!Strong#2025"
+      NEO4J_PLUGINS: '["apoc"]'
+      NEO4J_dbms_security_procedures_unrestricted: "apoc.*"
+      NEO4J_dbms_security_procedures_allowlist: "apoc.*"
+      NEO4J_server_default__listen__address: 0.0.0.0
+      NEO4J_server_http__listen__address: ":7474"
+      NEO4J_server_bolt__listen__address: ":7687"
+      NEO4J_server_memory_heap_initial__size: 256m
+      NEO4J_server_memory_heap_max__size: 512m
+      NEO4J_server_memory_pagecache_size: 512m
+      NEO4J_server_config_strict__validation_enabled: "false"
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - neo4j-data:/data
+      - neo4j-logs:/logs
+      - ./neo4j-conf:/var/lib/neo4j/conf
+    networks: [core]
+
+  analyst-ui:
+    image: python:3.12-slim
+    container_name: analyst-ui
+    working_dir: /app
+    volumes:
+      - ./crawler:/app/crawler:ro
+      - ./analyst:/app/analyst
+      - crawler-state:/app/state:ro
+      - crawler-data:/app/data:ro
+    environment:
+      - OS_HOST=http://opensearch:9200
+      - OS_USERNAME=
+      - OS_PASSWORD=
+      - DASHBOARDS_URL=http://dashboards:5601
+      - NEO4J_URI=bolt://neo4j:7687
+      - NEO4J_USER=neo4j
+      - NEO4J_PASSWORD=ChangeThis!Strong#2025
+      - TOR_SOCKS_HOST=tor
+      - TOR_SOCKS_PORT=9050
+      - OS_INDEX_SCANS=onion_scans
+      - OS_INDEX_PAGES=onion_pages
+      - AUTO_SCAN_ENABLED=true
+      - AUTO_SCAN_INTERVAL=300
+      - AUTO_SCAN_MAX_PER_CYCLE=1
+      - FFUF_WORDLIST=/app/analyst/wordlists/onion_small.txt
+      - NMAP_PORTS=1-1000
+    depends_on:
+      opensearch:
+        condition: service_started
+      neo4j:
+        condition: service_started
+    command: >
+      bash -c "
+        apt-get update &&
+        apt-get install -y nmap proxychains4 ffuf gobuster curl &&
+        echo 'strict_chain' > /etc/proxychains4.conf &&
+        echo 'proxy_dns' >> /etc/proxychains4.conf &&
+        echo '' >> /etc/proxychains4.conf &&
+        echo '[ProxyList]' >> /etc/proxychains4.conf &&
+        echo 'socks5  172.18.0.2 9050' >> /etc/proxychains4.conf &&
+        rm -rf /var/lib/apt/lists/* &&
+        pip install fastapi uvicorn jinja2 opensearch-py \"neo4j[bolt]\" python-multipart \"httpx[socks]\" &&
+        uvicorn analyst.main:app --host 0.0.0.0 --port 8000
+      "
+    ports:
+      - "8000:8000"
+    networks:
+      core:
+
+volumes:
+  tor-data:
+  crawler-state:
+  crawler-data:
+  renderer-shots:
+  neo4j-data:
+  neo4j-logs:
+  opensearch-data:
+
+networks:
+  core:
+    driver: bridge

@@ -1,0 +1,5 @@
+forums:
+  - name: example_forum
+    host: exampleonion.onion
+    login_path: /login
+    thread_selector: ".thread"

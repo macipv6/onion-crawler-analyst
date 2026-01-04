@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.sqlite3
+
+# Virtualenv / lokale Python-Umgebungen
+venv/
+.venv/
+.env
+.env.*
+!.env.example
+!.env.forensic.example
+
+# Docker / Daten / Volumes
+data_copy/
+opensearch/
+neo4j-data/
+neo4j-logs/
+logs/
+*.log
+
+# Node/Frontends (falls später dazu kommt)
+node_modules/
+dist/
+build/
+
+# System / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

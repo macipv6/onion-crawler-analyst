@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block content %}
+  <h2 class="text-2xl font-bold mb-4">Identity-Analyse</h2>
+
+  <form method="post" action="/identity" class="mb-6 space-y-4 bg-slate-900/60 border border-slate-800 rounded-xl p-4">
+    <div class="flex flex-wrap items-center gap-4">
+      <label class="text-sm font-medium">Typ</label>
+      <select name="identity_type" class="bg-slate-950 border border-slate-700 rounded px-3 py-1 text-sm">
+        <option value="username" {% if identity_type == "username" %}selected{% endif %}>Username</option>
+        <option value="email" disabled {% if identity_type == "email" %}selected{% endif %}>E-Mail (coming soon)</option>
+      </select>
+
+      <input
+        type="text"
+        name="value"
+        value="{{ value }}"
+        placeholder="z.B. TheMerlin13"
+        class="flex-1 min-w-[240px] bg-slate-950 border border-slate-700 rounded px-3 py-1 text-sm"
+      />
+
+      <button
+        type="submit"
+        class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-sm font-semibold px-4 py-1.5 rounded-md"
+      >
+        Suchen
+      </button>
+    </div>
+  </form>
+
+  {% if results is not none %}
+    {% if results|length == 0 %}
+      <p class="text-sm text-slate-400">Keine Treffer gefunden.</p>
+    {% else %}
+      <div class="overflow-x-auto border border-slate-800 rounded-xl">
+        <table class="min-w-full text-sm">
+          <thead class="bg-slate-900/80">
+            <tr>
+              <th class="px-3 py-2 text-left font-semibold">URL</th>
+              <th class="px-3 py-2 text-left font-semibold">Host</th>
+              <th class="px-3 py-2 text-left font-semibold">Risk</th>
+              <th class="px-3 py-2 text-left font-semibold">Topics</th>
+              <th class="px-3 py-2 text-left font-semibold">Wallets</th>
+              <th class="px-3 py-2 text-left font-semibold">PGP</th>
+              <th class="px-3 py-2 text-left font-semibold">Links</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800">
+            {% for r in results %}
+              <tr class="hover:bg-slate-900/70">
+                <td class="px-3 py-2 align-top"><span class="break-all">{{ r.url }}</span></td>
+                <td class="px-3 py-2 align-top">{{ r.host }}</td>
+                <td class="px-3 py-2 align-top">{{ r.risk }}</td>
+                <td class="px-3 py-2 align-top">{{ r.topics }}</td>
+                <td class="px-3 py-2 align-top">
+                  <div class="text-xs text-slate-300">
+                    BTC: {{ r.wallets_btc }}<br>
+                    ETH: {{ r.wallets_eth }}<br>
+                    XMR: {{ r.wallets_xmr }}
+                  </div>
+                </td>
+                <td class="px-3 py-2 align-top text-xs">{{ r.pgp_fps }}</td>
+                <td class="px-3 py-2 align-top text-xs">
+                  <a href="{{ r.dashboards_link }}" target="_blank" class="text-cyan-400 hover:text-cyan-300">
+                    OpenSearch
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+  {% endif %}
+{% endblock %}
