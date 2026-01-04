@@ -86,7 +86,8 @@ cd onion-crawler-analyst
 
 ### 2️⃣ Ensure Required Directories Exist
 ```
-mkdir -p analyst crawler dashboards tor neo4j-conf tools
+chmod +x init_dirs.sh
+./init_dirs.sh
 ```
 
 ### 3️⃣ Start Stack
