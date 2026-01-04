@@ -1,6 +1,6 @@
 
 <p align="center">
-  <img src="assets/banner.png" alt="Onion Crawler & Analyst Banner">
+  <img src="https://github.com/macipv6/onion-crawler-analyst/blob/main/assets/banner.png" alt="Onion Crawler & Analyst Banner">
 </p>
 
 # Onion Crawler • Analyst UI • Neo4j Intelligence Stack
