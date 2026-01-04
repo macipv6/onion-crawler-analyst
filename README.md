@@ -1,4 +1,8 @@
 
+<p align="center">
+  <img src="assets/banner.png" alt="Onion Crawler & Analyst Banner">
+</p>
+
 # Onion Crawler • Analyst UI • Neo4j Intelligence Stack
 
 A complete Darknet Intelligence platform combining:
