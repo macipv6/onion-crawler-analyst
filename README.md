@@ -107,7 +107,7 @@ Tor will automatically run on port **9050**.
 
 | Service | URL |
 |--------|------|
-| Analyst Dashboard | `http://IP:8080` |
+| Analyst Dashboard | `http://IP:8000` |
 | OpenSearch API | `http://IP:9200` |
 | Kibana (optional) | `http://IP:5601` |
 | Neo4j Browser | `http://IP:7474` |
